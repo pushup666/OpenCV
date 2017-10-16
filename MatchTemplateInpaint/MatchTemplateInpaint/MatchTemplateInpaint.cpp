@@ -3,6 +3,7 @@
 #include <opencv2/core/core.hpp> 
 #include <iostream>
 #include <stdio.h>
+#include <fstream>  
 
 #include <photo\photo.hpp>
 
@@ -21,20 +22,27 @@ Point matchLoc;
 //CV_TM_CCOEFF_NORMED =5
 int match_method = CV_TM_SQDIFF;
 
+//CV_INPAINT_NS		=0
+//CV_INPAINT_TELEA	=1
+int inpaint_method = CV_INPAINT_TELEA;
+int inpaint_radius = 5;
+
 void MatchingTemplate(Mat templ);
 void MatchingMask(Mat mask);
 
 int main()
 {
-	_img = imread("D:\\2.bmp");
-	_templ = imread("D:\\plus.bmp", 1);
-	_mask = imread("D:\\plusmask.bmp", 1);
+	ofstream out("D:\\Í¼Ïñ·ÖÎö\\2.txt");
 
-	_templ1 = imread("D:\\plus1.bmp", 1);
-	_mask1 = imread("D:\\plus1mask.bmp", 1);
+	_img = imread("D:\\Í¼Ïñ·ÖÎö\\2.bmp");
+	_templ = imread("D:\\Í¼Ïñ·ÖÎö\\plus.bmp", 1);
+	_mask = imread("D:\\Í¼Ïñ·ÖÎö\\plusmask.bmp", 1);
 
-	_templ2 = imread("D:\\plus2.bmp", 1);
-	_mask2 = imread("D:\\plus2mask.bmp", 1);
+	_templ1 = imread("D:\\Í¼Ïñ·ÖÎö\\plus1.bmp", 1);
+	_mask1 = imread("D:\\Í¼Ïñ·ÖÎö\\plus1mask.bmp", 1);
+
+	_templ2 = imread("D:\\Í¼Ïñ·ÖÎö\\plus2.bmp", 1);
+	_mask2 = imread("D:\\Í¼Ïñ·ÖÎö\\plus2mask.bmp", 1);
 		
 	//cvtColor(_img, _img, CV_RGB2GRAY, 0);
 	//cvtColor(_templ, _templ, CV_RGB2GRAY, 0);
@@ -45,25 +53,31 @@ int main()
 	MatchingTemplate(_templ1);
 	MatchingMask(_mask1);
 	imshow("2", _img);
+	out << "plus1 (" << matchLoc.x+7 << ", " << matchLoc.y+13 << ")\n";
 
 	MatchingTemplate(_templ2);
 	MatchingMask(_mask2);
 	imshow("3", _img);
+	out << "plus2 (" << matchLoc.x+7 << ", " << matchLoc.y+13 << ")\n";
 
 	MatchingTemplate(_templ);
 	MatchingMask(_mask);
 	imshow("4", _img);
+	out << "plus (" << matchLoc.x+7 << ", " << matchLoc.y+7 << ")\n";
 
 	MatchingTemplate(_templ);
 	MatchingMask(_mask);
 	imshow("5", _img);
+	out << "plus (" << matchLoc.x+7 << ", " << matchLoc.y+7 << ")\n";
+
+	out.close();
 
 	Mat imageGray;
 	cvtColor(_img, imageGray, CV_RGB2GRAY, 0);
 	Mat imageMask = Mat(imageGray.size(), CV_8UC1, Scalar::all(0));
 	threshold(imageGray, imageMask, 250, 255, CV_THRESH_BINARY);
-	inpaint(_img, imageMask, _inpaint, 5, INPAINT_TELEA);
-
+	inpaint(_img, imageMask, _inpaint, inpaint_radius, inpaint_method);
+	imshow("8", imageMask);
 	imshow("9", _inpaint);
 	cout << "Finish" <<endl;
 	waitKey();
