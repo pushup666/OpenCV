@@ -12,7 +12,7 @@ using namespace cv;
 int width = 400;
 int height = 400;
 
-int frames = 2000;
+int frames = 1000;
 RNG rng(static_cast<int>(time(nullptr)));
 
 static Mat NextFrame(Mat src)
@@ -54,7 +54,7 @@ int main()
 {          
 	const string NAME = "D:\\TEST.avi";
 	auto S = Size(width, height);
-	VideoWriter outputVideo(NAME, CV_FOURCC('X','V','I','D'), 60, S, 0);
+	VideoWriter outputVideo(NAME, CV_FOURCC('X','V','I','D'), 30, S, 0);
 
     if (!outputVideo.isOpened())
     {
