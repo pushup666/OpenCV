@@ -1,7 +1,7 @@
 #include <iostream> // for standard I/O
 #include <string> // for strings
 #include <iomanip> // for controlling float print precision
-#include <sstream> // string to number conversion
+//#include <sstream> // string to number conversion
 #include <fstream> 
 
 #include <opencv2/core.hpp> // Basic OpenCV structures (cv::Mat, Scalar)
@@ -19,10 +19,12 @@ Scalar getMSSIM(const Mat& I1, const Mat& I2);
 
 int main()
 {
-	//const string sourceReference = "D:\\Codecs\\sample.mkv";
-	//const string sourceCompare = "D:\\Codecs\\sample.mp4";
-	const string sourceReference = "D:\\Codecs\\TEST.avi";
-	const string sourceCompare = "D:\\Codecs\\TEST.mkv";
+	const string sourceReference = "D:\\Codecs\\sample.mkv";
+	const string sourceCompare = "D:\\Codecs\\sample.mp4";
+	//const string sourceReference = "D:\\Codecs\\TEST.avi";
+	//const string sourceCompare = "D:\\Codecs\\TEST.mkv";
+
+	ofstream outTxt("D:\\Codecs\\data.txt");
 
 	VideoCapture captRef(sourceReference);
 	VideoCapture captCom(sourceCompare);
@@ -30,7 +32,6 @@ int main()
 	if (!captRef.isOpened())
 	{
 		cout << "Could not open REFERENCE video" << sourceReference << endl;
-
 		system("pause");
 		return -1;
 	}
@@ -38,7 +39,6 @@ int main()
 	if (!captCom.isOpened())
 	{
 		cout << "Could not open case COMPARE video" << sourceCompare << endl;
-
 		system("pause");
 		return -1;
 	}
@@ -70,7 +70,7 @@ int main()
 		system("pause");
 	}
 
-	int minFrameCount = min(refFrameCount,comFrameCount);
+	int minFrameCount = min(refFrameCount, comFrameCount);
 
 	const char* WIN_REF = "Reference";
 	const char* WIN_CMP = "Compare";
@@ -86,8 +86,7 @@ int main()
 	Mat frameReference, frameCompare;
 	double psnrV;
 	Scalar mssimV;
-
-	ofstream outTxt("D:\\Codecs\\data.txt");
+	
 	for (int i = 1; i <= minFrameCount; i++) //Show the image captured in the window and repeat
 	{
 		captRef >> frameReference;
@@ -95,10 +94,11 @@ int main()
 
 		psnrV = getPSNR(frameReference, frameCompare);
 		mssimV = getMSSIM(frameReference, frameCompare);
+		//mssimV = Scalar(1,3);
 
 		cout << "Frame: " << i << "# ";
 		cout << setiosflags(ios::fixed) << setprecision(3) << psnrV << "dB";
-		cout << " MSSIM: "
+		cout << "  MSSIM:"
              << " R " << setiosflags(ios::fixed) << setprecision(2) << mssimV.val[2] * 100 << "%"
              << " G " << setiosflags(ios::fixed) << setprecision(2) << mssimV.val[1] * 100 << "%"
              << " B " << setiosflags(ios::fixed) << setprecision(2) << mssimV.val[0] * 100 << "%";
@@ -109,11 +109,11 @@ int main()
 		////////////////////////////////// Show Image /////////////////////////////////////////////
 		imshow(WIN_REF, frameReference);
 		imshow(WIN_CMP, frameCompare);
-		
-		waitKey(1);
+
+		waitKey(10);
 	}
 	outTxt.close();
-	//matlab m file
+	//matlab file
 	//data = load('D:\Codecs\data.txt');
 	//figure(1);;plot(data(:,1));title('psnr');
 	//figure(2);;plot(data(:,2));title('ssim');
@@ -134,25 +134,25 @@ double getPSNR(const Mat& I1, const Mat& I2)
 
 	double sse = s.val[0] + s.val[1] + s.val[2]; // sum channels
 
-	if (sse <= 1e-10) // for small values return zero
-		return 0;
-	else
+	if (sse <= 1e-10)
 	{
-		double mse = sse / double(I1.channels() * I1.total());
-		double psnr = 10.0 * log10((255 * 255) / mse);
-		return psnr;
+		return 200;
 	}
+	double mse = sse / double(I1.channels() * I1.total());
+	double psnr = 10.0 * log10((255 * 255) / mse);
+	return psnr;
 }
 
 Scalar getMSSIM(const Mat& i1, const Mat& i2)
 {
+	//C1=(K1*L)^2, C2=(K2*L)^2是用来维持稳定的常数。L是像素值的动态范围。K1=0.01, K2=0.03, L=255。
 	const double C1 = 6.5025, C2 = 58.5225;
+
 	/***************************** INITS **********************************/
-	int d = CV_32F;
 
 	Mat I1, I2;
-	i1.convertTo(I1, d); // cannot calculate on one byte large values
-	i2.convertTo(I2, d);
+	i1.convertTo(I1, CV_32F); // cannot calculate on one byte large values
+	i2.convertTo(I2, CV_32F);
 
 	Mat I2_2 = I2.mul(I2); // I2^2
 	Mat I1_2 = I1.mul(I1); // I1^2
@@ -180,6 +180,7 @@ Scalar getMSSIM(const Mat& i1, const Mat& i2)
 	sigma12 -= mu1_mu2;
 
 	///////////////////////////////// FORMULA ////////////////////////////////
+
 	Mat t1, t2, t3;
 
 	t1 = 2 * mu1_mu2 + C1;

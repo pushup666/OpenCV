@@ -12,7 +12,7 @@ using namespace cv;
 int width = 400;
 int height = 400;
 
-int frames = 1000;
+int frames = 100;
 RNG rng(static_cast<int>(time(nullptr)));
 
 static Mat NextFrame(Mat src)
