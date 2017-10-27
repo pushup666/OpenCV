@@ -13,18 +13,18 @@
 using namespace std;
 using namespace cv;
 
-double getPSNR(const Mat& I1, const Mat& I2);
-double getMSSIM(const Mat& I1, const Mat& I2);
+void getPSNR(int frame, const Mat& i1, const Mat& i2);
+void getMSSIM(int frame, const Mat& i1, const Mat& i2);
 
+int MaxFrameCount = 10000;
+vector<vector<double>> result(MaxFrameCount, vector<double>(2));
 
 int main()
 {
 	//const string sourceReference = "D:\\Codecs\\sample.mkv";
 	//const string sourceCompare = "D:\\Codecs\\sample.mp4";
 	const string sourceReference = "D:\\Codecs\\TEST.avi";
-	const string sourceCompare = "D:\\Codecs\\TEST.mp4";
-
-	ofstream outTxt("D:\\Codecs\\data.txt");
+	const string sourceCompare = "D:\\Codecs\\TEST.mp4";	
 
 	VideoCapture captRef(sourceReference);
 	VideoCapture captCom(sourceCompare);
@@ -70,58 +70,53 @@ int main()
 		system("pause");
 	}
 
-	int minFrameCount = min(refFrameCount, comFrameCount);
-
-	const char* WIN_REF = "Reference";
-	const char* WIN_CMP = "Compare";
-
-	// Windows
-	namedWindow(WIN_REF, WINDOW_AUTOSIZE);
-	namedWindow(WIN_CMP, WINDOW_AUTOSIZE);
-	moveWindow(WIN_REF, 0, 0);
-	moveWindow(WIN_CMP, refWidth, 0);
+	int FrameCount = min(refFrameCount, comFrameCount);	
+	if (FrameCount > MaxFrameCount)
+	{
+		cout << "FrameCount(" << FrameCount << ") > MaxFrameCount(" << MaxFrameCount << ")" << endl;
+		system("pause");
+		return -1;
+	}
 
 	cout << "Width=" << refWidth << " Height=" << refHeight << " FrameCount=" << refFrameCount << endl;
 
+	double begin = double(getTickCount());
+
 	Mat frameReference, frameCompare;
-	double psnrV;
-	double mssimV;
-	
-	for (int i = 0; i < minFrameCount; i++) //Show the image captured in the window and repeat
+	for(int i = 0; i < FrameCount; i++)
 	{
 		captRef >> frameReference;
 		captCom >> frameCompare;
 
-		psnrV = getPSNR(frameReference, frameCompare);
-		mssimV = getMSSIM(frameReference, frameCompare);
+		getPSNR(i, frameReference, frameCompare);
+		getMSSIM(i, frameReference, frameCompare);
+	}
 
-		cout << "Frame:" << setiosflags(ios::right) << setw(4) << i << "#     ";
-		cout << "PSNR: " << setiosflags(ios::fixed) << setprecision(4) << psnrV << "dB     ";
-		cout << "SSIM: " << setiosflags(ios::fixed) << setprecision(4) << mssimV << endl;
-
-		outTxt << psnrV << ", "<< mssimV << "\n";
-
-		////////////////////////////////// Show Image /////////////////////////////////////////////
-		imshow(WIN_REF, frameReference);
-		imshow(WIN_CMP, frameCompare);
-
-		waitKey(10);
+	ofstream outTxt("D:\\Codecs\\data.txt");
+	for (int i = 0; i < FrameCount; i++)
+	{
+		outTxt << result[i][0] << ", "<< result[i][1] << "\n";
 	}
 	outTxt.close();
+
 	//matlab file
 	//data = load('D:\Codecs\data.txt');
 	//figure(1);;plot(data(:,1));title('psnr');
 	//figure(2);;plot(data(:,2));title('ssim');
-	
-	cout << "Finish!";
+
+	double duration = double(getTickCount()) - begin;
+	duration /= getTickFrequency();
+
+	cout << "Run Time =" << duration << "s" << endl;
+	cout << "Finish!" << endl;
 	system("pause");
 	return 0;
 }
 
-double getPSNR(const Mat& I1, const Mat& I2)
+void getPSNR(int frame, const Mat& i1, const Mat& i2)
 {
 	Mat s1;
-	absdiff(I1, I2, s1); // |I1 - I2|
+	absdiff(i1, i2, s1); // |I1 - I2|
 	s1.convertTo(s1, CV_32F); // cannot make a square on 8 bits
 	s1 = s1.mul(s1); // |I1 - I2|^2
 
@@ -131,14 +126,14 @@ double getPSNR(const Mat& I1, const Mat& I2)
 
 	if (sse <= 1e-10)
 	{
-		return 200;
+		result[frame][0] = 200;
 	}
-	double mse = sse / double(I1.channels() * I1.total());
+	double mse = sse / double(i1.channels() * i1.total());
 	double psnr = 10.0 * log10((255 * 255) / mse);
-	return psnr;
+	result[frame][0] = psnr;
 }
 
-double getMSSIM(const Mat& i1, const Mat& i2)
+void getMSSIM(int frame, const Mat& i1, const Mat& i2)
 {
 	//C1=(K1*L)^2, C2=(K2*L)^2是用来维持稳定的常数。L是像素值的动态范围。K1=0.01, K2=0.03, L=255。
 	const double C1 = 6.5025, C2 = 58.5225;
@@ -191,5 +186,5 @@ double getMSSIM(const Mat& i1, const Mat& i2)
 
 	Scalar mssimV = mean(ssim_map); // mssim = average of ssim map
 	double mssim = (mssimV.val[0] + mssimV.val[1] + mssimV.val[2]) / 3;
-	return mssim;
+	result[frame][1] = mssim;
 }
