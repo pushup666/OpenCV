@@ -29,7 +29,7 @@ int mandelbrotFormula(const complex<float> &z0, const int maxIter=500) {
         return 0;
     }
 
-    return cvRound(sqrt(value / (float) maxIter) * 255);
+    return cvRound(sqrt(value / float(maxIter)) * 255);
 }
 //! [mandelbrot-grayscale-value]
 
@@ -53,7 +53,7 @@ public:
             float y0 = i / m_scaleY + m_y1;
 
             complex<float> z0(x0, y0);
-            uchar value = (uchar) mandelbrotFormula(z0);
+            uchar value = uchar(mandelbrotFormula(z0));
             m_img.ptr<uchar>(i)[j] = value;
         }
     }
@@ -82,7 +82,7 @@ void sequentialMandelbrot(Mat &img, const float x1, const float y1, const float 
             float y0 = i / scaleY + y1;
 
             complex<float> z0(x0, y0);
-            uchar value = (uchar) mandelbrotFormula(z0);
+            uchar value = uchar(mandelbrotFormula(z0));
             img.ptr<uchar>(i)[j] = value;
         }
     }
@@ -100,7 +100,7 @@ int main()
     float scaleY = mandelbrotImg.rows / (y2 - y1);
     //! [mandelbrot-transformation]
 
-    double t1 = (double) getTickCount();
+    double t1 = double(getTickCount());
 
     #ifdef CV_CXX11
 
@@ -130,18 +130,19 @@ int main()
 
     #endif
 
-    t1 = ((double) getTickCount() - t1) / getTickFrequency();
+    t1 = (double(getTickCount()) - t1) / getTickFrequency();
     cout << "Parallel Mandelbrot: " << t1 << " s" << endl;
 
     Mat mandelbrotImgSequential(4800, 5400, CV_8U);
-    double t2 = (double) getTickCount();
+    double t2 = double(getTickCount());
     sequentialMandelbrot(mandelbrotImgSequential, x1, y1, scaleX, scaleY);
-    t2 = ((double) getTickCount() - t2) / getTickFrequency();
+    t2 = (double(getTickCount()) - t2) / getTickFrequency();
     cout << "Sequential Mandelbrot: " << t2 << " s" << endl;
     cout << "Speed-up: " << t2/t1 << " X" << endl;
 
-    imwrite("Mandelbrot_parallel.png", mandelbrotImg);
-    imwrite("Mandelbrot_sequential.png", mandelbrotImgSequential);
+    imwrite("D:\\Mandelbrot_parallel.png", mandelbrotImg);
+    imwrite("D:\\Mandelbrot_sequential.png", mandelbrotImgSequential);
 
+	system("pause");
     return EXIT_SUCCESS;
 }

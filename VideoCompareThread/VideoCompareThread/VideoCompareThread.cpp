@@ -13,105 +13,12 @@
 using namespace std;
 using namespace cv;
 
-void getPSNR(int frame, const Mat& i1, const Mat& i2);
-void getMSSIM(int frame, const Mat& i1, const Mat& i2);
-
 int MaxFrameCount = 10000;
+int FrameCount;
 vector<vector<double>> result(MaxFrameCount, vector<double>(2));
 
-int main()
-{
-	//const string sourceReference = "D:\\Codecs\\sample.mkv";
-	//const string sourceCompare = "D:\\Codecs\\sample.mp4";
-	const string sourceReference = "D:\\Codecs\\TEST.avi";
-	const string sourceCompare = "D:\\Codecs\\TEST.mp4";	
-
-	VideoCapture captRef(sourceReference);
-	VideoCapture captCom(sourceCompare);
-
-	if (!captRef.isOpened())
-	{
-		cout << "Could not open REFERENCE video" << sourceReference << endl;
-		system("pause");
-		return -1;
-	}
-
-	if (!captCom.isOpened())
-	{
-		cout << "Could not open case COMPARE video" << sourceCompare << endl;
-		system("pause");
-		return -1;
-	}
-
-	int refWidth		= int(captRef.get(CAP_PROP_FRAME_WIDTH));
-	int refHeight		= int(captRef.get(CAP_PROP_FRAME_HEIGHT));
-	int refFrameCount	= int(captRef.get(CAP_PROP_FRAME_COUNT));
-
-	int comWidth		= int(captCom.get(CAP_PROP_FRAME_WIDTH));
-	int comHeight		= int(captCom.get(CAP_PROP_FRAME_HEIGHT));
-	int comFrameCount	= int(captCom.get(CAP_PROP_FRAME_COUNT));
-
-	if (refWidth != comWidth || refHeight != comHeight)
-	{
-		cout << "REFERENCE Width=" << refWidth << " Height=" << refHeight << endl;
-		cout << "COMPARE   Width=" << comWidth << " Height=" << comHeight << endl;
-		cout << "Inputs have different size! Closing." << endl;
-
-		system("pause");
-		return -1;
-	}
-
-	if (refFrameCount != comFrameCount)
-	{
-		cout << "REFERENCE FrameCount=" << refFrameCount << endl;
-		cout << "COMPARE   FrameCount=" << comFrameCount << endl;
-		cout << "Inputs have different frame, but we will continue" << endl;
-
-		system("pause");
-	}
-
-	int FrameCount = min(refFrameCount, comFrameCount);	
-	if (FrameCount > MaxFrameCount)
-	{
-		cout << "FrameCount(" << FrameCount << ") > MaxFrameCount(" << MaxFrameCount << ")" << endl;
-		system("pause");
-		return -1;
-	}
-
-	cout << "Width=" << refWidth << " Height=" << refHeight << " FrameCount=" << refFrameCount << endl;
-
-	double begin = double(getTickCount());
-
-	Mat frameReference, frameCompare;
-	for(int i = 0; i < FrameCount; i++)
-	{
-		captRef >> frameReference;
-		captCom >> frameCompare;
-
-		getPSNR(i, frameReference, frameCompare);
-		getMSSIM(i, frameReference, frameCompare);
-	}
-
-	ofstream outTxt("D:\\Codecs\\data.txt");
-	for (int i = 0; i < FrameCount; i++)
-	{
-		outTxt << result[i][0] << ", "<< result[i][1] << "\n";
-	}
-	outTxt.close();
-
-	//matlab file
-	//data = load('D:\Codecs\data.txt');
-	//figure(1);;plot(data(:,1));title('psnr');
-	//figure(2);;plot(data(:,2));title('ssim');
-
-	double duration = double(getTickCount()) - begin;
-	duration /= getTickFrequency();
-
-	cout << "Run Time =" << duration << "s" << endl;
-	cout << "Finish!" << endl;
-	system("pause");
-	return 0;
-}
+vector<int,Mat> RefFrames;
+vector<int,Mat> ComFrames;
 
 void getPSNR(int frame, const Mat& i1, const Mat& i2)
 {
@@ -187,4 +94,155 @@ void getMSSIM(int frame, const Mat& i1, const Mat& i2)
 	Scalar mssimV = mean(ssim_map); // mssim = average of ssim map
 	double mssim = (mssimV.val[0] + mssimV.val[1] + mssimV.val[2]) / 3;
 	result[frame][1] = mssim;
+}
+
+
+class ParallelVideoCompare : public ParallelLoopBody
+{
+public:
+    ParallelVideoCompare (VideoCapture ref, VideoCapture com) : m_ref(ref), m_com(com)
+    {
+    }
+
+    virtual void operator ()(const Range& range) const
+    {
+		Mat frameReference, frameCompare;
+		for (int r = range.start; r < range.end; r++)
+        {
+			//m_ref >> frameReference;
+			//m_com >> frameCompare;
+
+			getPSNR(r, frameReference, frameCompare);
+			getMSSIM(r, frameReference, frameCompare);
+        }
+    }
+
+    ParallelVideoCompare& operator=(const ParallelVideoCompare &) {return *this;};
+
+private:
+	VideoCapture m_ref;
+	VideoCapture m_com;
+};
+
+void compareVideoToResultSequential(VideoCapture ref, VideoCapture com)
+{
+	
+}
+
+void writeResultToText(char* fileName)
+{
+	//data = load('D:\Codecs\data.txt');
+	//figure(1);;plot(data(:,1));title('psnr');
+	//figure(2);;plot(data(:,2));title('ssim');
+	//data = load('D:\Codecs\data - sample.txt');
+	//figure(3);;plot(data(:,1));title('psnr');
+	//figure(4);;plot(data(:,2));title('ssim');
+
+	ofstream outTxt(fileName);
+	for (int i = 0; i < FrameCount; i++)
+	{
+		outTxt << result[i][0] << ", "<< result[i][1] << "\n";
+	}
+	outTxt.close();
+}
+
+int main()
+{
+	//const string sourceReference = "D:\\Codecs\\sample.mkv";
+	//const string sourceCompare = "D:\\Codecs\\sample.mp4";
+	const string sourceReference = "D:\\Codecs\\TEST.avi";
+	const string sourceCompare = "D:\\Codecs\\TEST.mp4";	
+
+	VideoCapture captRef(sourceReference);
+	VideoCapture captCom(sourceCompare);
+
+	if (!captRef.isOpened())
+	{
+		cout << "Could not open REFERENCE video" << sourceReference << endl;
+		system("pause");
+		return -1;
+	}
+
+	if (!captCom.isOpened())
+	{
+		cout << "Could not open case COMPARE video" << sourceCompare << endl;
+		system("pause");
+		return -1;
+	}
+
+	int refWidth		= int(captRef.get(CAP_PROP_FRAME_WIDTH));
+	int refHeight		= int(captRef.get(CAP_PROP_FRAME_HEIGHT));
+	int refFrameCount	= int(captRef.get(CAP_PROP_FRAME_COUNT));
+
+	int comWidth		= int(captCom.get(CAP_PROP_FRAME_WIDTH));
+	int comHeight		= int(captCom.get(CAP_PROP_FRAME_HEIGHT));
+	int comFrameCount	= int(captCom.get(CAP_PROP_FRAME_COUNT));
+
+	if (refWidth != comWidth || refHeight != comHeight)
+	{
+		cout << "REFERENCE Width=" << refWidth << " Height=" << refHeight << endl;
+		cout << "COMPARE   Width=" << comWidth << " Height=" << comHeight << endl;
+		cout << "Inputs have different size! Closing." << endl;
+
+		system("pause");
+		return -1;
+	}
+
+	if (refFrameCount != comFrameCount)
+	{
+		cout << "REFERENCE FrameCount=" << refFrameCount << endl;
+		cout << "COMPARE   FrameCount=" << comFrameCount << endl;
+		cout << "Inputs have different frame, but we will continue" << endl;
+
+		system("pause");
+	}
+
+	FrameCount = min(refFrameCount, comFrameCount);	
+	if (FrameCount > MaxFrameCount)
+	{
+		cout << "FrameCount(" << FrameCount << ") > MaxFrameCount(" << MaxFrameCount << ")" << endl;
+		system("pause");
+		return -1;
+	}
+
+	cout << "Width=" << refWidth << " Height=" << refHeight << " FrameCount=" << refFrameCount << endl;
+
+	double begin = double(getTickCount());
+
+	//compareVideoToResultSequential(captRef, captCom);
+
+	Mat frameReference, frameCompare;
+	for(int i = 0; i < FrameCount; i++)
+	{
+		captRef >> frameReference;
+		captCom >> frameCompare;
+
+		if (i%100 == 0)
+		{
+
+		}
+		else
+		{
+			//RefFrames.push_back();
+		}
+		RefFrames.clear;
+		ComFrames.clear;
+
+
+
+		getPSNR(i, frameReference, frameCompare);
+		getMSSIM(i, frameReference, frameCompare);
+	}
+
+
+
+	writeResultToText("D:\\Codecs\\data.txt");
+
+	double duration = double(getTickCount()) - begin;
+	duration /= getTickFrequency();
+
+	cout << "Run Time =" << duration << "s" << endl;
+	cout << "Finish!" << endl;
+	system("pause");
+	return 0;
 }
