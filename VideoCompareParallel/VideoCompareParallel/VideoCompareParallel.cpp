@@ -1,6 +1,6 @@
 #include <iostream> // for standard I/O
 #include <string> // for strings
-#include <iomanip> // for controlling float print precision
+//#include <iomanip> // for controlling float print precision
 //#include <sstream> // string to number conversion
 #include <fstream> 
 
@@ -13,13 +13,16 @@
 using namespace std;
 using namespace cv;
 
-const int MaxFrameCount = 10000;
-static int VideoFrameCount;
-static int counter = 1;
-vector<vector<double>> result(MaxFrameCount, vector<double>(2));
+const int MaxVideoFrameCount = 10000;
+vector<vector<double>> result(MaxVideoFrameCount, vector<double>(2));
 
+const int MaxFrameCountPerVector = 64;
+vector<int> FramesIndex;
 vector<Mat> RefFrames;
 vector<Mat> ComFrames;
+
+static int VideoFrameCount;
+static int counter = 1;
 
 void getPSNR(int frame, const Mat& i1, const Mat& i2)
 {
@@ -100,11 +103,11 @@ void getMSSIM(int frame, const Mat& i1, const Mat& i2)
 class ParallelVideoCompare : public ParallelLoopBody
 {
 public:
-    ParallelVideoCompare (int frameCount) : m_frameCount(frameCount)
+    ParallelVideoCompare(int frameCount) : m_frameCount(frameCount)
     {
     }
-
-    virtual void operator ()(const Range& range) const
+	
+    void operator()(const Range& range) const override
     {
 		Mat frameReference, frameCompare;	
 		
@@ -115,8 +118,8 @@ public:
 			frameReference = RefFrames[r];
 			frameCompare   = ComFrames[r];
 
-			getPSNR(r, frameReference, frameCompare);
-			getMSSIM(r, frameReference, frameCompare);
+			getPSNR(FramesIndex[r], frameReference, frameCompare);
+			getMSSIM(FramesIndex[r], frameReference, frameCompare);
         }
     }
 
@@ -127,15 +130,15 @@ private:
 void compareVideoToResultSequential()
 {
 	Mat frameReference, frameCompare;
-	for (int i = 0; i < VideoFrameCount; i++)
+	for (int i = 0; i < FramesIndex.size(); i++)
 	{
 		cout << "FrameCount(" << counter++ << "/" << VideoFrameCount << ")" << endl;
 
 		frameReference = RefFrames[i];
 		frameCompare   = ComFrames[i];
 
-		getPSNR(i, frameReference, frameCompare);
-		getMSSIM(i, frameReference, frameCompare);
+		getPSNR(FramesIndex[i], frameReference, frameCompare);
+		getMSSIM(FramesIndex[i], frameReference, frameCompare);
 	}
 	
 }
@@ -143,7 +146,7 @@ void compareVideoToResultSequential()
 void compareVideoToResultParallel()
 {
 	ParallelVideoCompare parallelVideoCompare(VideoFrameCount);
-    parallel_for_(Range(0, VideoFrameCount), parallelVideoCompare);	
+    parallel_for_(Range(0, FramesIndex.size()), parallelVideoCompare);	
 }
 
 void writeResultToText(char* fileName)
@@ -160,10 +163,10 @@ void writeResultToText(char* fileName)
 
 int main()
 {
-	const string referenceFileName = "D:\\Codecs\\sample.mkv";
-	const string compareFileName = "D:\\Codecs\\sample.mp4";
-	//const string referenceFileName = "D:\\Codecs\\TEST.avi";
-	//const string compareFileName = "D:\\Codecs\\TEST.mp4";	
+	//const string referenceFileName = "D:\\Codecs\\sample.mkv";
+	//const string compareFileName = "D:\\Codecs\\sample.mp4";
+	const string referenceFileName = "D:\\Codecs\\TEST.avi";
+	const string compareFileName = "D:\\Codecs\\TEST.mp4";	
 
 	VideoCapture captReference(referenceFileName);
 	VideoCapture captCompare(compareFileName);
@@ -215,9 +218,9 @@ int main()
 	}
 
 	VideoFrameCount = min(refFrameCount, comFrameCount);	
-	if (VideoFrameCount > MaxFrameCount)
+	if (VideoFrameCount > MaxVideoFrameCount)
 	{
-		cout << "FrameCount(" << VideoFrameCount << ") > MaxFrameCount(" << MaxFrameCount << ")" << endl;
+		cout << "FrameCount(" << VideoFrameCount << ") > MaxFrameCount(" << MaxVideoFrameCount << ")" << endl;
 		system("pause");
 		return -1;
 	}
@@ -237,12 +240,20 @@ int main()
 		captReference >> frameReference;
 		captCompare >> frameCompare;
 
+		FramesIndex.push_back(i);
 		RefFrames.push_back(frameReference.clone());
 		ComFrames.push_back(frameCompare.clone());		
-	}
 
-	//compareVideoToResultSequential();
-	compareVideoToResultParallel();
+		if (FramesIndex.size() == MaxFrameCountPerVector || i == VideoFrameCount-1)
+		{
+			//compareVideoToResultSequential();
+			compareVideoToResultParallel();
+
+			FramesIndex.clear();
+			RefFrames.clear();
+			ComFrames.clear();			
+		}
+	}	
 	
 	writeResultToText("D:\\Codecs\\data.txt");
 

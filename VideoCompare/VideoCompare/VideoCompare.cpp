@@ -7,8 +7,7 @@
 #include <opencv2/core.hpp> // Basic OpenCV structures (cv::Mat, Scalar)
 #include <opencv2/imgproc.hpp> // Gaussian Blur
 #include <opencv2/videoio.hpp>
-#include <opencv2/highgui.hpp> // OpenCV window I/O
-
+//#include <opencv2/highgui.hpp> // OpenCV window I/O
 
 using namespace std;
 using namespace cv;
@@ -72,16 +71,10 @@ int main()
 
 	int minFrameCount = min(refFrameCount, comFrameCount);
 
-	const char* WIN_REF = "Reference";
-	const char* WIN_CMP = "Compare";
-
-	// Windows
-	namedWindow(WIN_REF, WINDOW_AUTOSIZE);
-	namedWindow(WIN_CMP, WINDOW_AUTOSIZE);
-	moveWindow(WIN_REF, 0, 0);
-	moveWindow(WIN_CMP, refWidth, 0);
 
 	cout << "Width=" << refWidth << " Height=" << refHeight << " FrameCount=" << refFrameCount << endl;
+
+	double begin = double(getTickCount());
 
 	Mat frameReference, frameCompare;
 	double psnrV;
@@ -95,24 +88,19 @@ int main()
 		psnrV = getPSNR(frameReference, frameCompare);
 		mssimV = getMSSIM(frameReference, frameCompare);
 
-		cout << "Frame:" << setiosflags(ios::right) << setw(4) << i << "#     ";
+		cout << "Frame:" << setiosflags(ios::right) << setw(4) << i+1 << "#     ";
 		cout << "PSNR: " << setiosflags(ios::fixed) << setprecision(4) << psnrV << "dB     ";
 		cout << "SSIM: " << setiosflags(ios::fixed) << setprecision(4) << mssimV << endl;
 
 		outTxt << psnrV << ", "<< mssimV << "\n";
-
-		////////////////////////////////// Show Image /////////////////////////////////////////////
-		imshow(WIN_REF, frameReference);
-		imshow(WIN_CMP, frameCompare);
-
-		waitKey(10);
 	}
 	outTxt.close();
-	//matlab file
-	//data = load('D:\Codecs\data.txt');
-	//figure(1);;plot(data(:,1));title('psnr');
-	//figure(2);;plot(data(:,2));title('ssim');
 	
+	double duration = double(getTickCount()) - begin;
+	duration /= getTickFrequency();
+
+	cout << "Run Time =" << duration << "s" << endl;
+
 	cout << "Finish!";
 	system("pause");
 	return 0;

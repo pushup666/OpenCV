@@ -93,55 +93,31 @@ void sequentialMandelbrot(Mat &img, const float x1, const float y1, const float 
 int main()
 {
     //! [mandelbrot-transformation]
-    Mat mandelbrotImg(4800, 5400, CV_8U);
+    Mat mandelbrotImgParallel(4800, 4800, CV_8U);
+	Mat mandelbrotImgSequential(4800, 4800, CV_8U);
+
     float x1 = -2.1f, x2 = 0.6f;
-    float y1 = -1.2f, y2 = 1.2f;
-    float scaleX = mandelbrotImg.cols / (x2 - x1);
-    float scaleY = mandelbrotImg.rows / (y2 - y1);
+    float y1 = -1.35f, y2 = 1.35f;
+    float scaleX = mandelbrotImgParallel.cols / (x2 - x1);
+    float scaleY = mandelbrotImgParallel.rows / (y2 - y1);
     //! [mandelbrot-transformation]
 
     double t1 = double(getTickCount());
-
-    #ifdef CV_CXX11
-
-    //! [mandelbrot-parallel-call-cxx11]
-    parallel_for_(Range(0, mandelbrotImg.rows*mandelbrotImg.cols), [&](const Range& range){
-        for (int r = range.start; r < range.end; r++)
-        {
-            int i = r / mandelbrotImg.cols;
-            int j = r % mandelbrotImg.cols;
-
-            float x0 = j / scaleX + x1;
-            float y0 = i / scaleY + y1;
-
-            complex<float> z0(x0, y0);
-            uchar value = (uchar) mandelbrotFormula(z0);
-            mandelbrotImg.ptr<uchar>(i)[j] = value;
-        }
-    });
-    //! [mandelbrot-parallel-call-cxx11]
-
-    #else
-
-    //! [mandelbrot-parallel-call]
-    ParallelMandelbrot parallelMandelbrot(mandelbrotImg, x1, y1, scaleX, scaleY);
-    parallel_for_(Range(0, mandelbrotImg.rows*mandelbrotImg.cols), parallelMandelbrot);
-    //! [mandelbrot-parallel-call]
-
-    #endif
-
+    ParallelMandelbrot parallelMandelbrot(mandelbrotImgParallel, x1, y1, scaleX, scaleY);
+    parallel_for_(Range(0, mandelbrotImgParallel.rows*mandelbrotImgParallel.cols), parallelMandelbrot);
     t1 = (double(getTickCount()) - t1) / getTickFrequency();
-    cout << "Parallel Mandelbrot: " << t1 << " s" << endl;
 
-    Mat mandelbrotImgSequential(4800, 5400, CV_8U);
+    cout << "Parallel Mandelbrot: " << t1 << " s" << endl;
+	imwrite("D:\\Mandelbrot_parallel.png", mandelbrotImgParallel);
+   
     double t2 = double(getTickCount());
     sequentialMandelbrot(mandelbrotImgSequential, x1, y1, scaleX, scaleY);
     t2 = (double(getTickCount()) - t2) / getTickFrequency();
-    cout << "Sequential Mandelbrot: " << t2 << " s" << endl;
-    cout << "Speed-up: " << t2/t1 << " X" << endl;
 
-    imwrite("D:\\Mandelbrot_parallel.png", mandelbrotImg);
-    imwrite("D:\\Mandelbrot_sequential.png", mandelbrotImgSequential);
+    cout << "Sequential Mandelbrot: " << t2 << " s" << endl;
+	imwrite("D:\\Mandelbrot_sequential.png", mandelbrotImgSequential);
+
+    cout << "Speed-up: " << t2/t1 << " X" << endl;
 
 	system("pause");
     return EXIT_SUCCESS;
