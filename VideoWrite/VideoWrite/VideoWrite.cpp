@@ -9,10 +9,10 @@
 using namespace std;
 using namespace cv;
 
-int width = 400;
-int height = 400;
+int width = 640;
+int height = 480;
 
-int frames = 1000;
+int frames = 5000;
 RNG rng(static_cast<int>(time(nullptr)));
 
 static Mat NextFrame(Mat src)

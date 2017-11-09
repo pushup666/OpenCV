@@ -1,6 +1,6 @@
 #include <iostream> // for standard I/O
 #include <string> // for strings
-//#include <iomanip> // for controlling float print precision
+#include <iomanip> // for controlling float print precision
 //#include <sstream> // string to number conversion
 #include <fstream> 
 
@@ -16,7 +16,7 @@ using namespace cv;
 const int MaxVideoFrameCount = 10000;
 vector<vector<double>> result(MaxVideoFrameCount, vector<double>(2));
 
-const int MaxFrameCountPerVector = 64;
+const int MaxFrameCountPerVector = 32;
 vector<int> FramesIndex;
 vector<Mat> RefFrames;
 vector<Mat> ComFrames;
@@ -113,8 +113,6 @@ public:
 		
 		for (int r = range.start; r < range.end; r++)
         {
-			cout << "FrameCount(" << counter++ << "/" << VideoFrameCount << ")" << endl;
-
 			frameReference = RefFrames[r];
 			frameCompare   = ComFrames[r];
 
@@ -132,8 +130,6 @@ void compareVideoToResultSequential()
 	Mat frameReference, frameCompare;
 	for (int i = 0; i < FramesIndex.size(); i++)
 	{
-		cout << "FrameCount(" << counter++ << "/" << VideoFrameCount << ")" << endl;
-
 		frameReference = RefFrames[i];
 		frameCompare   = ComFrames[i];
 
@@ -149,7 +145,7 @@ void compareVideoToResultParallel()
     parallel_for_(Range(0, FramesIndex.size()), parallelVideoCompare);	
 }
 
-void writeResultToText(char* fileName)
+void writeResultToText(string fileName)
 {
 	ofstream outTxt(fileName);
 	for (int i = 0; i < VideoFrameCount; i++)
@@ -161,12 +157,18 @@ void writeResultToText(char* fileName)
 
 
 
-int main()
+int main(int argc, char *argv[])
 {
-	//const string referenceFileName = "D:\\Codecs\\sample.mkv";
-	//const string compareFileName = "D:\\Codecs\\sample.mp4";
-	const string referenceFileName = "D:\\Codecs\\TEST.avi";
-	const string compareFileName = "D:\\Codecs\\TEST.mp4";	
+	if (argc != 4)
+    {
+        cout << "Not enough parameters" << endl;
+        return -1;
+    }
+
+	const string referenceFileName = argv[1];
+	const string compareFileName = argv[2];
+	const string dataFileName = argv[3];
+
 
 	VideoCapture captReference(referenceFileName);
 	VideoCapture captCompare(compareFileName);
@@ -214,7 +216,7 @@ int main()
 		cout << "COMPARE   FrameCount=" << comFrameCount << endl;
 		cout << "Inputs have different frame, but we will continue." << endl;
 
-		system("pause");
+		//system("pause");
 	}
 
 	VideoFrameCount = min(refFrameCount, comFrameCount);	
@@ -231,6 +233,7 @@ int main()
 
 
 	cout << "Width=" << refWidth << " Height=" << refHeight << " FrameCount=" << refFrameCount << endl;
+	cout << setiosflags(ios::fixed) << setprecision(2);
 
 	double begin = double(getTickCount());
 
@@ -251,16 +254,18 @@ int main()
 
 			FramesIndex.clear();
 			RefFrames.clear();
-			ComFrames.clear();			
+			ComFrames.clear();
+
+			cout << "\r" << "FrameCount: " << i+1 << "/" << VideoFrameCount << "(" << (double(i+1)/VideoFrameCount*100) << "%)" << flush;
 		}
 	}	
 	
-	writeResultToText("D:\\Codecs\\data.txt");
+	writeResultToText(dataFileName);
 
 	double duration = (double(getTickCount()) - begin) / getTickFrequency();
-
-	cout << "Run Time =" << duration << "s" << endl;
+	cout << endl;
+	cout << "Run Time = " << duration << "s" << endl;
 	cout << "Finish!" << endl;
-	system("pause");
+	//system("pause");
 	return 0;
 }
