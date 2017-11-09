@@ -156,7 +156,7 @@ void writeResultToText(string fileName)
 }
 
 
-
+//VideoCompareParallel referenceFileName compareFileName dataFileName
 int main(int argc, char *argv[])
 {
 	if (argc != 4)

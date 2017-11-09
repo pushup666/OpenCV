@@ -11,8 +11,8 @@ using namespace cv;
 
 int width = 640;
 int height = 480;
-
-int frames = 5000;
+int fps = 30;
+int frames = 1000;
 RNG rng(static_cast<int>(time(nullptr)));
 
 static Mat NextFrame(Mat src)
@@ -20,15 +20,15 @@ static Mat NextFrame(Mat src)
 	Mat res;
 	src.copyTo(res);
 		
-	for (auto i = 2; i < width - 2; i++)
+	for (int i = 2; i < width - 2; i++)
 	{
-		for (auto j = 2; j < height - 2; j++)
+		for (int j = 2; j < height - 2; j++)
 		{			
-			auto neighbor5 = 0;
+			int neighbor5 = 0;
 		
-			for (auto ii = -2; ii < 3; ii++)
+			for (int ii = -2; ii < 3; ii++)
 			{
-				for (auto jj = -2; jj < 3; jj++)
+				for (int jj = -2; jj < 3; jj++)
 				{
 					neighbor5 += src.at<uchar>(j+jj,i+ii);
 				}
@@ -50,11 +50,24 @@ static Mat NextFrame(Mat src)
 	return res;
 }
 
-int main()
-{          
-	const string NAME = "D:\\TEST.avi";
-	auto S = Size(width, height);
-	VideoWriter outputVideo(NAME, CV_FOURCC('X','V','I','D'), 30, S, 0);
+//VideoWrite 640 480 30 1000 D:\Test.avi
+int main(int argc, char *argv[])
+{
+	if (argc != 6)
+    {
+        cout << "Not enough parameters" << endl;
+        return -1;
+    }
+
+	width = atoi(argv[1]);
+	height = atoi(argv[2]);
+	fps = atoi(argv[3]);
+	frames = atoi(argv[4]);
+
+	const string NAME = argv[5];
+
+	Size S = Size(width, height);
+	VideoWriter outputVideo(NAME, CV_FOURCC('X','V','I','D'), fps, S, 0);
 
     if (!outputVideo.isOpened())
     {
@@ -64,36 +77,33 @@ int main()
 
 	Mat img(S,CV_8UC1,Scalar::all(255));
 
-	for (auto i = width/4; i < width/2; i++)
+	for (int i = width/4; i < width/2; i++)
 	{
-		for (auto j = height/4; j < height/2; j++)
+		for (int j = height/4; j < height/2; j++)
 		{			
 			img.at<uchar>(j,i) = 0;
 		}
 	}
 
-	for (auto i = width/2; i < width/4*3; i++)
+	for (int i = width/2; i < width/4*3; i++)
 	{
-		for (auto j = height/2; j < height/4*3; j++)
+		for (int j = height/2; j < height/4*3; j++)
 		{			
 			img.at<uchar>(j,i) = 0;
 		}
 	}
 
-	auto begin = static_cast<double>(getTickCount());
+	double begin = double(getTickCount());
 
-	for (auto i = 0; i < frames; i++)
+	for (int i = 0; i < frames; i++)
 	{
 		img = NextFrame(img);
 		outputVideo.write(img);
 	}
-	auto duration = static_cast<double>(getTickCount()) - begin;
-	duration /= getTickFrequency();
+	double duration = (double(getTickCount()) - begin) / getTickFrequency();
 
-	printf( "run time = %g s\n", duration);
-	printf( "fps = %g \n", frames / duration);
-    cout << "Finished writing" << endl;
-
-	system("pause");
+	cout << "Run Time = " << duration << "s" << endl;
+	cout << "FPS = " << frames / duration << endl;
+    cout << "Finish!" << endl;
     return 0;
 }
