@@ -13,7 +13,7 @@
 using namespace std;
 using namespace cv;
 
-const int MaxVideoFrameCount = 10000;
+const int MaxVideoFrameCount = 5000;
 vector<vector<double>> result(MaxVideoFrameCount, vector<double>(2));
 
 const int MaxFrameCountPerVector = 32;
@@ -165,9 +165,9 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-	const string referenceFileName = argv[1];
-	const string compareFileName = argv[2];
-	const string dataFileName = argv[3];
+	const string referenceFileName	= argv[1];
+	const string compareFileName	= argv[2];
+	const string dataFileName		= argv[3];
 
 
 	VideoCapture captReference(referenceFileName);
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
 	{
 		cout << "REFERENCE Width=" << refWidth << " Height=" << refHeight << endl;
 		cout << "COMPARE   Width=" << comWidth << " Height=" << comHeight << endl;
-		cout << "Inputs have different size! Closing." << endl;
+		cout << "Inputs have different size, we will stop!" << endl;
 
 		system("pause");
 		return -1;
@@ -212,27 +212,21 @@ int main(int argc, char *argv[])
 
 	if (refFrameCount != comFrameCount)
 	{
-		cout << "REFERENCE FrameCount=" << refFrameCount << endl;
-		cout << "COMPARE   FrameCount=" << comFrameCount << endl;
+		cout << "REFERENCE FrameCount = " << refFrameCount << endl;
+		cout << "COMPARE   FrameCount = " << comFrameCount << endl;
 		cout << "Inputs have different frame, but we will continue." << endl;
-
-		//system("pause");
 	}
 
 	VideoFrameCount = min(refFrameCount, comFrameCount);	
 	if (VideoFrameCount > MaxVideoFrameCount)
 	{
-		cout << "FrameCount(" << VideoFrameCount << ") > MaxFrameCount(" << MaxVideoFrameCount << ")" << endl;
-		system("pause");
-		return -1;
+		cout << "FrameCount(" << VideoFrameCount << ") > MaxFrameCount(" << MaxVideoFrameCount << ")" << endl;		
+		VideoFrameCount = MaxVideoFrameCount;
+		//system("pause");
 	}
 	//Check END
 
-
-
-
-
-	cout << "Width=" << refWidth << " Height=" << refHeight << " FrameCount=" << refFrameCount << endl;
+	cout << "Width = " << refWidth << " Height = " << refHeight << " FrameCount = " << VideoFrameCount << endl;
 	cout << setiosflags(ios::fixed) << setprecision(2);
 
 	double begin = double(getTickCount());
