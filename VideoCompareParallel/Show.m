@@ -1,10 +1,10 @@
-data1 = load('D:\Codecs\Beauty.libx264.5k.txt');
+data1 = load('Z:\16725_Sensi_Pearl.txt');
 psnr_data1 = data1(:,1);
 ssim_data1 = data1(:,2);
-data2 = load('D:\Codecs\Beauty.libx265.5k.crf28.txt');
+data2 = load('Z:\16725_Sensi_Pearl.txt');
 psnr_data2 = data2(:,1);
 ssim_data2 = data2(:,2);
-data3 = load('D:\Codecs\Beauty.libx265.5k.crf28.txt');
+data3 = load('Z:\16725_Sensi_Pearl.txt');
 psnr_data3 = data3(:,1);
 ssim_data3 = data3(:,2);
 
