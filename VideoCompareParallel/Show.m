@@ -1,30 +1,30 @@
-data1 = load('Z:\16725_Sensi_Pearl.txt');
+data1 = load('D:\Codecs\sample_libx264.txt');
 psnr_data1 = data1(:,1);
 ssim_data1 = data1(:,2);
-data2 = load('Z:\16725_Sensi_Pearl.txt');
+data2 = load('D:\Codecs\sample_libx264.txt');
 psnr_data2 = data2(:,1);
 ssim_data2 = data2(:,2);
-data3 = load('Z:\16725_Sensi_Pearl.txt');
+data3 = load('D:\Codecs\sample_h264_qsv.txt');
 psnr_data3 = data3(:,1);
 ssim_data3 = data3(:,2);
 
-smooth_psnr_data1 = smooth(psnr_data1);
-smooth_ssim_data1 = smooth(ssim_data1);
-smooth_psnr_data2 = smooth(psnr_data2);
-smooth_ssim_data2 = smooth(ssim_data2);
-smooth_psnr_data3 = smooth(psnr_data3);
-smooth_ssim_data3 = smooth(ssim_data3);
+%smooth_psnr_data1 = smooth(psnr_data1);
+%smooth_ssim_data1 = smooth(ssim_data1);
+%smooth_psnr_data2 = smooth(psnr_data2);
+%smooth_ssim_data2 = smooth(ssim_data2);
+%smooth_psnr_data3 = smooth(psnr_data3);
+%smooth_ssim_data3 = smooth(ssim_data3);
 
 figure(1);hold on;
-plot(smooth_psnr_data1,'r');
-plot(smooth_psnr_data2,'g');
-plot(smooth_psnr_data3,'b');
+plot(psnr_data1,'r');
+plot(psnr_data2,'g');
+plot(psnr_data3,'b');
 title('psnr');
 
 figure(2);hold on;
-plot(smooth_ssim_data1,'r');
-plot(smooth_ssim_data2,'g');
-plot(smooth_ssim_data3,'b');
+plot(ssim_data1,'r');
+plot(ssim_data2,'g');
+plot(ssim_data3,'b');
 title('ssim');
 
 mean_psnr_data1 = mean(psnr_data1);

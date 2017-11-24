@@ -2,7 +2,7 @@
 #include <string> // for strings
 #include <iomanip> // for controlling float print precision
 //#include <sstream> // string to number conversion
-#include <fstream> 
+#include <fstream>
 
 #include <opencv2/core.hpp> // Basic OpenCV structures (cv::Mat, Scalar)
 #include <opencv2/imgproc.hpp> // Gaussian Blur
@@ -16,7 +16,7 @@ using namespace cv;
 const int MaxVideoFrameCount = 5000;
 vector<vector<double>> result(MaxVideoFrameCount, vector<double>(2));
 
-const int MaxFrameCountPerVector = 32;
+const int MaxFrameCountPerVector = 64;
 vector<int> FramesIndex;
 vector<Mat> RefFrames;
 vector<Mat> ComFrames;
@@ -59,7 +59,7 @@ void getMSSIM(int frame, const Mat& i1, const Mat& i2)
 	Mat I1_2 = I1.mul(I1); // I1^2
 	Mat I1_I2 = I1.mul(I2); // I1 * I2
 
-	/*************************** END INITS **********************************/
+							/*************************** END INITS **********************************/
 
 	Mat mu1, mu2; // PRELIMINARY COMPUTING
 	GaussianBlur(I1, mu1, Size(11, 11), 1.5);
@@ -103,23 +103,23 @@ void getMSSIM(int frame, const Mat& i1, const Mat& i2)
 class ParallelVideoCompare : public ParallelLoopBody
 {
 public:
-    ParallelVideoCompare(int frameCount) : m_frameCount(frameCount)
-    {
-    }
-	
-    void operator()(const Range& range) const override
-    {
-		Mat frameReference, frameCompare;	
-		
+	ParallelVideoCompare(int frameCount) : m_frameCount(frameCount)
+	{
+	}
+
+	void operator()(const Range& range) const override
+	{
+		Mat frameReference, frameCompare;
+
 		for (int r = range.start; r < range.end; r++)
-        {
+		{
 			frameReference = RefFrames[r];
-			frameCompare   = ComFrames[r];
+			frameCompare = ComFrames[r];
 
 			getPSNR(FramesIndex[r], frameReference, frameCompare);
 			getMSSIM(FramesIndex[r], frameReference, frameCompare);
-        }
-    }
+		}
+	}
 
 private:
 	int m_frameCount;
@@ -131,18 +131,18 @@ void compareVideoToResultSequential()
 	for (int i = 0; i < FramesIndex.size(); i++)
 	{
 		frameReference = RefFrames[i];
-		frameCompare   = ComFrames[i];
+		frameCompare = ComFrames[i];
 
 		getPSNR(FramesIndex[i], frameReference, frameCompare);
 		getMSSIM(FramesIndex[i], frameReference, frameCompare);
 	}
-	
+
 }
 
 void compareVideoToResultParallel()
 {
 	ParallelVideoCompare parallelVideoCompare(VideoFrameCount);
-    parallel_for_(Range(0, FramesIndex.size()), parallelVideoCompare);	
+	parallel_for_(Range(0, FramesIndex.size()), parallelVideoCompare);
 }
 
 void writeResultToText(string fileName)
@@ -150,7 +150,7 @@ void writeResultToText(string fileName)
 	ofstream outTxt(fileName);
 	for (int i = 0; i < VideoFrameCount; i++)
 	{
-		outTxt << result[i][0] << ", "<< result[i][1] << "\n";
+		outTxt << result[i][0] << ", " << result[i][1] << "\n";
 	}
 	outTxt.close();
 }
@@ -160,14 +160,14 @@ void writeResultToText(string fileName)
 int main(int argc, char *argv[])
 {
 	if (argc != 4)
-    {
-        cout << "Not enough parameters" << endl;
-        return -1;
-    }
+	{
+		cout << "Not enough parameters" << endl;
+		return -1;
+	}
 
-	const string referenceFileName	= argv[1];
-	const string compareFileName	= argv[2];
-	const string dataFileName		= argv[3];
+	const string referenceFileName = argv[1];
+	const string compareFileName = argv[2];
+	const string dataFileName = argv[3];
 
 
 	VideoCapture captReference(referenceFileName);
@@ -192,13 +192,13 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	int refWidth		= int(captReference.get(CAP_PROP_FRAME_WIDTH));
-	int refHeight		= int(captReference.get(CAP_PROP_FRAME_HEIGHT));
-	int refFrameCount	= int(captReference.get(CAP_PROP_FRAME_COUNT));
+	int refWidth = int(captReference.get(CAP_PROP_FRAME_WIDTH));
+	int refHeight = int(captReference.get(CAP_PROP_FRAME_HEIGHT));
+	int refFrameCount = int(captReference.get(CAP_PROP_FRAME_COUNT));
 
-	int comWidth		= int(captCompare.get(CAP_PROP_FRAME_WIDTH));
-	int comHeight		= int(captCompare.get(CAP_PROP_FRAME_HEIGHT));
-	int comFrameCount	= int(captCompare.get(CAP_PROP_FRAME_COUNT));
+	int comWidth = int(captCompare.get(CAP_PROP_FRAME_WIDTH));
+	int comHeight = int(captCompare.get(CAP_PROP_FRAME_HEIGHT));
+	int comFrameCount = int(captCompare.get(CAP_PROP_FRAME_COUNT));
 
 	if (refWidth != comWidth || refHeight != comHeight)
 	{
@@ -217,10 +217,10 @@ int main(int argc, char *argv[])
 		cout << "Inputs have different frame, but we will continue." << endl;
 	}
 
-	VideoFrameCount = min(refFrameCount, comFrameCount);	
+	VideoFrameCount = min(refFrameCount, comFrameCount);
 	if (VideoFrameCount > MaxVideoFrameCount)
 	{
-		cout << "FrameCount(" << VideoFrameCount << ") > MaxFrameCount(" << MaxVideoFrameCount << ")" << endl;		
+		cout << "FrameCount(" << VideoFrameCount << ") > MaxFrameCount(" << MaxVideoFrameCount << ")" << endl;
 		VideoFrameCount = MaxVideoFrameCount;
 		//system("pause");
 	}
@@ -232,16 +232,16 @@ int main(int argc, char *argv[])
 	double begin = double(getTickCount());
 
 	Mat frameReference, frameCompare;
-	for(int i = 0; i < VideoFrameCount; i++)
+	for (int i = 0; i < VideoFrameCount; i++)
 	{
 		captReference >> frameReference;
 		captCompare >> frameCompare;
 
 		FramesIndex.push_back(i);
 		RefFrames.push_back(frameReference.clone());
-		ComFrames.push_back(frameCompare.clone());		
+		ComFrames.push_back(frameCompare.clone());
 
-		if (FramesIndex.size() == MaxFrameCountPerVector || i == VideoFrameCount-1)
+		if (FramesIndex.size() == MaxFrameCountPerVector || i == VideoFrameCount - 1)
 		{
 			//compareVideoToResultSequential();
 			compareVideoToResultParallel();
@@ -250,10 +250,10 @@ int main(int argc, char *argv[])
 			RefFrames.clear();
 			ComFrames.clear();
 
-			cout << "\r" << "FrameCount: " << i+1 << "/" << VideoFrameCount << "(" << (double(i+1)/VideoFrameCount*100) << "%)" << flush;
+			cout << "\r" << "FrameCount: " << i + 1 << "/" << VideoFrameCount << "(" << (double(i + 1) / VideoFrameCount * 100) << "%)" << flush;
 		}
-	}	
-	
+	}
+
 	writeResultToText(dataFileName);
 
 	double duration = (double(getTickCount()) - begin) / getTickFrequency();
