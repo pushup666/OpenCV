@@ -13,7 +13,7 @@
 using namespace std;
 using namespace cv;
 
-const int MaxVideoFrameCount = 500;
+const int MaxVideoFrameCount = 5000;
 vector<vector<double>> result(MaxVideoFrameCount, vector<double>(2));
 
 const int MaxFrameCountPerVector = 64;
@@ -38,6 +38,7 @@ void getPSNR(int frame, const Mat& i1, const Mat& i2)
 	if (sse <= 1e-10)
 	{
 		result[frame][0] = 200;
+		return;
 	}
 	double mse = sse / double(i1.channels() * i1.total());
 	double psnr = 10.0 * log10((255 * 255) / mse);
@@ -159,19 +160,19 @@ void writeResultToText(string fileName)
 //VideoCompareParallel referenceFileName compareFileName dataFileName
 int main(int argc, char *argv[])
 {
-	//if (argc != 4)
-	//{
-	//	cout << "Not enough parameters" << endl;
-	//	return -1;
-	//}
+	if (argc != 4)
+	{
+		cout << "Not enough parameters" << endl;
+		return -1;
+	}
 
-	//const string referenceFileName = argv[1];
-	//const string compareFileName = argv[2];
-	//const string dataFileName = argv[3];
+	const string referenceFileName = argv[1];
+	const string compareFileName = argv[2];
+	const string dataFileName = argv[3];
 
-	const string referenceFileName = "D:\\Codecs\\sample.mkv";
-	const string compareFileName = "D:\\Codecs\\sample.mp4";
-	const string dataFileName = "D:\\Codecs\\sample1.txt";
+	//const string referenceFileName = "D:\\Codecs\\sample.mkv";
+	//const string compareFileName = "D:\\Codecs\\sample.mp4";
+	//const string dataFileName = "D:\\Codecs\\sample1.txt";
 
 
 	VideoCapture captReference(referenceFileName);
@@ -222,10 +223,11 @@ int main(int argc, char *argv[])
 	}
 
 	VideoFrameCount = min(refFrameCount, comFrameCount);
-	int step = 1;
+	int step = 1; int endFrame = VideoFrameCount;
 	if (VideoFrameCount > MaxVideoFrameCount)
 	{
 		step = VideoFrameCount / MaxVideoFrameCount;
+		endFrame = MaxVideoFrameCount * step;
 		//cout << "FrameCount(" << VideoFrameCount << ") > MaxFrameCount(" << MaxVideoFrameCount << ")" << endl;
 		//VideoFrameCount = MaxVideoFrameCount;
 		//system("pause");
@@ -238,7 +240,7 @@ int main(int argc, char *argv[])
 	double begin = double(getTickCount());
 
 	Mat frameReference, frameCompare;
-	for (int i = 0; i < VideoFrameCount - step; i += step)
+	for (int i = 0; i < endFrame; i += step)
 	{
 		for (int j = 0; j < step; j++)
 		{
@@ -250,7 +252,18 @@ int main(int argc, char *argv[])
 		RefFrames.push_back(frameReference.clone());
 		ComFrames.push_back(frameCompare.clone());
 
-		if (FramesIndex.size() == MaxFrameCountPerVector || i + step >= VideoFrameCount - step)
+		if (FramesIndex.size() == MaxFrameCountPerVector)
+		{
+			//compareVideoToResultSequential();
+			compareVideoToResultParallel();
+
+			FramesIndex.clear();
+			RefFrames.clear();
+			ComFrames.clear();
+
+			cout << "\r" << "FrameCount: " << i + 1 << "/" << VideoFrameCount << "(" << (double(i + 1) / VideoFrameCount * 100) << "%)" << flush;
+		}
+		if (i == endFrame - step)
 		{
 			//compareVideoToResultSequential();
 			compareVideoToResultParallel();
