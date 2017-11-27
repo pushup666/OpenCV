@@ -13,7 +13,7 @@
 using namespace std;
 using namespace cv;
 
-const int MaxVideoFrameCount = 5000;
+const int MaxVideoFrameCount = 500;
 vector<vector<double>> result(MaxVideoFrameCount, vector<double>(2));
 
 const int MaxFrameCountPerVector = 64;
@@ -148,7 +148,7 @@ void compareVideoToResultParallel()
 void writeResultToText(string fileName)
 {
 	ofstream outTxt(fileName);
-	for (int i = 0; i < VideoFrameCount; i++)
+	for (int i = 0; i < MaxVideoFrameCount; i++)
 	{
 		outTxt << result[i][0] << ", " << result[i][1] << "\n";
 	}
@@ -159,15 +159,19 @@ void writeResultToText(string fileName)
 //VideoCompareParallel referenceFileName compareFileName dataFileName
 int main(int argc, char *argv[])
 {
-	if (argc != 4)
-	{
-		cout << "Not enough parameters" << endl;
-		return -1;
-	}
+	//if (argc != 4)
+	//{
+	//	cout << "Not enough parameters" << endl;
+	//	return -1;
+	//}
 
-	const string referenceFileName = argv[1];
-	const string compareFileName = argv[2];
-	const string dataFileName = argv[3];
+	//const string referenceFileName = argv[1];
+	//const string compareFileName = argv[2];
+	//const string dataFileName = argv[3];
+
+	const string referenceFileName = "D:\\Codecs\\sample.mkv";
+	const string compareFileName = "D:\\Codecs\\sample.mp4";
+	const string dataFileName = "D:\\Codecs\\sample1.txt";
 
 
 	VideoCapture captReference(referenceFileName);
@@ -218,10 +222,12 @@ int main(int argc, char *argv[])
 	}
 
 	VideoFrameCount = min(refFrameCount, comFrameCount);
+	int step = 1;
 	if (VideoFrameCount > MaxVideoFrameCount)
 	{
-		cout << "FrameCount(" << VideoFrameCount << ") > MaxFrameCount(" << MaxVideoFrameCount << ")" << endl;
-		VideoFrameCount = MaxVideoFrameCount;
+		step = VideoFrameCount / MaxVideoFrameCount;
+		//cout << "FrameCount(" << VideoFrameCount << ") > MaxFrameCount(" << MaxVideoFrameCount << ")" << endl;
+		//VideoFrameCount = MaxVideoFrameCount;
 		//system("pause");
 	}
 	//Check END
@@ -232,16 +238,19 @@ int main(int argc, char *argv[])
 	double begin = double(getTickCount());
 
 	Mat frameReference, frameCompare;
-	for (int i = 0; i < VideoFrameCount; i++)
+	for (int i = 0; i < VideoFrameCount - step; i += step)
 	{
-		captReference >> frameReference;
-		captCompare >> frameCompare;
+		for (int j = 0; j < step; j++)
+		{
+			captReference >> frameReference;
+			captCompare >> frameCompare;
+		}		
 
-		FramesIndex.push_back(i);
+		FramesIndex.push_back(i / step);
 		RefFrames.push_back(frameReference.clone());
 		ComFrames.push_back(frameCompare.clone());
 
-		if (FramesIndex.size() == MaxFrameCountPerVector || i == VideoFrameCount - 1)
+		if (FramesIndex.size() == MaxFrameCountPerVector || i + step >= VideoFrameCount - step)
 		{
 			//compareVideoToResultSequential();
 			compareVideoToResultParallel();

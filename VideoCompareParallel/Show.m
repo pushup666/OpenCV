@@ -1,10 +1,10 @@
-data1 = load('D:\Codecs\sample_libx264.txt');
+data1 = load('D:\Codecs\sample.txt');
 psnr_data1 = data1(:,1);
 ssim_data1 = data1(:,2);
-data2 = load('D:\Codecs\sample_libx264.txt');
+data2 = load('D:\Codecs\sample.txt');
 psnr_data2 = data2(:,1);
 ssim_data2 = data2(:,2);
-data3 = load('D:\Codecs\sample_h264_qsv.txt');
+data3 = load('D:\Codecs\sample1.txt');
 psnr_data3 = data3(:,1);
 ssim_data3 = data3(:,2);
 
