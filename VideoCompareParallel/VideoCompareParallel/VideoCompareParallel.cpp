@@ -16,7 +16,7 @@ using namespace cv;
 const int MaxVideoFrameCount = 5000;
 vector<vector<double>> result(MaxVideoFrameCount, vector<double>(2));
 
-const int MaxFrameCountPerVector = 64;
+const int MaxFrameCountPerVector = 128;
 vector<int> FramesIndex;vector<Mat> RefFrames;vector<Mat> ComFrames;
 
 static int VideoFrameCount;
@@ -157,18 +157,18 @@ void writeResultToText(string fileName)
 //VideoCompareParallel referenceFileName compareFileName dataFileName
 int main(int argc, char *argv[])
 {
-	//if (argc != 4)
-	//{
-	//	cout << "Not enough parameters" << endl;
-	//	return -1;
-	//}
-	//const string referenceFileName = argv[1];
-	//const string compareFileName = argv[2];
-	//const string dataFileName = argv[3];
+	if (argc != 4)
+	{
+		cout << "Not enough parameters" << endl;
+		return -1;
+	}
+	const string referenceFileName = argv[1];
+	const string compareFileName = argv[2];
+	const string dataFileName = argv[3];
 
-	const string referenceFileName = "D:\\Codecs\\sample.mkv";
-	const string compareFileName = "D:\\Codecs\\sample.mp4";
-	const string dataFileName = "D:\\Codecs\\sample.txt";
+	//const string referenceFileName = "D:\\Codecs\\sample.mkv";
+	//const string compareFileName = "D:\\Codecs\\sample.mp4";
+	//const string dataFileName = "D:\\Codecs\\sample.txt";
 
 
 	VideoCapture captReference(referenceFileName);
